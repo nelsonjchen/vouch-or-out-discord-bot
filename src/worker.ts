@@ -1,35 +1,105 @@
 /**
- * Welcome to Cloudflare Workers! This is your first worker.
- *
- * - Run `npm run dev` in your terminal to start a development server
- * - Open a browser tab at http://localhost:8787/ to see your worker in action
- * - Run `npm run deploy` to publish your worker
- *
- * Learn more at https://developers.cloudflare.com/workers/
+ * The core server that runs on a Cloudflare worker.
  */
 
-
+import { Router } from 'itty-router';
+import {
+	InteractionResponseType,
+	InteractionType,
+	verifyKey,
+} from 'discord-interactions';
+import { VOUCH_COMMAND } from './commands.js';
+import { InteractionResponseFlags } from 'discord-interactions';
 
 export interface Env {
-	// Example binding to KV. Learn more at https://developers.cloudflare.com/workers/runtime-apis/kv/
-	// MY_KV_NAMESPACE: KVNamespace;
-	//
-	// Example binding to Durable Object. Learn more at https://developers.cloudflare.com/workers/runtime-apis/durable-objects/
-	// MY_DURABLE_OBJECT: DurableObjectNamespace;
-	//
-	// Example binding to R2. Learn more at https://developers.cloudflare.com/workers/runtime-apis/r2/
-	// MY_BUCKET: R2Bucket;
-	//
-	// Example binding to a Service. Learn more at https://developers.cloudflare.com/workers/runtime-apis/service-bindings/
-	// MY_SERVICE: Fetcher;
-	//
-	// Example binding to a Queue. Learn more at https://developers.cloudflare.com/queues/javascript-apis/
-	// MY_QUEUE: Queue;
-	//
+	DISCORD_PUBLIC_KEY: string;
 }
 
-export default {
-	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-		return new Response('Hello World!');
+class JsonResponse extends Response {
+	constructor(body: object, init?: ResponseInit) {
+		const jsonBody = JSON.stringify(body);
+		init = init || {
+			headers: {
+				'content-type': 'application/json;charset=UTF-8',
+			},
+		};
+		super(jsonBody, init);
+	}
+}
+
+const router = Router();
+
+/**
+ * A simple :wave: hello page to verify the worker is working.
+ */
+router.get('/', (request, env) => {
+	return new Response(`👋 ${env.DISCORD_APPLICATION_ID}`);
+});
+
+/**
+ * Main route for all requests sent from Discord.  All incoming messages will
+ * include a JSON payload described here:
+ * https://discord.com/developers/docs/interactions/receiving-and-responding#interaction-object
+ */
+router.post('/', async (request, env) => {
+	const { isValid, interaction } = await server.verifyDiscordRequest(
+		request,
+		env,
+	);
+	if (!isValid || !interaction) {
+		return new Response('Bad request signature.', { status: 401 });
+	}
+
+	if (interaction.type === InteractionType.PING) {
+		// The `PING` message is used during the initial webhook handshake, and is
+		// required to configure the webhook in the developer portal.
+		return new JsonResponse({
+			type: InteractionResponseType.PONG,
+		});
+	}
+
+	if (interaction.type === InteractionType.APPLICATION_COMMAND) {
+		// Most user commands will come as `APPLICATION_COMMAND`.
+		switch (interaction.data.name.toLowerCase()) {
+			case VOUCH_COMMAND.name.toLowerCase(): {
+				return new JsonResponse({
+					type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+					data: {
+						content: "I'm sorry, I'm not ready yet. Please try again later.",
+					},
+				});
+			}
+
+			default:
+				return new JsonResponse({ error: 'Unknown Type' }, { status: 400 });
+		}
+	}
+
+	console.error('Unknown Type');
+	return new JsonResponse({ error: 'Unknown Type' }, { status: 400 });
+});
+router.all('*', () => new Response('Not Found.', { status: 404 }));
+
+async function verifyDiscordRequest(request: Request, env: Env) {
+	const signature = request.headers.get('x-signature-ed25519');
+	const timestamp = request.headers.get('x-signature-timestamp');
+	const body = await request.text();
+	const isValidRequest =
+		signature &&
+		timestamp &&
+		verifyKey(body, signature, timestamp, env.DISCORD_PUBLIC_KEY);
+	if (!isValidRequest) {
+		return { isValid: false };
+	}
+
+	return { interaction: JSON.parse(body), isValid: true };
+}
+
+const server = {
+	verifyDiscordRequest: verifyDiscordRequest,
+	fetch: async function (request: Request, env: Env, ctx: ExecutionContext) {
+		return router.handle(request, env);
 	},
 };
+
+export default server;
