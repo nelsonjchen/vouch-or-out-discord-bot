@@ -10,10 +10,7 @@ import {
 } from 'discord-interactions';
 import { VOUCH_COMMAND } from './commands.js';
 import { InteractionResponseFlags } from 'discord-interactions';
-
-export interface Env {
-	DISCORD_PUBLIC_KEY: string;
-}
+import { Env } from './types.js';
 
 class JsonResponse extends Response {
 	constructor(body: object, init?: ResponseInit) {
@@ -32,8 +29,8 @@ const router = Router();
 /**
  * A simple :wave: hello page to verify the worker is working.
  */
-router.get('/', (request, env) => {
-	return new Response(`👋 ${env.DISCORD_APPLICATION_ID}`);
+router.get('/', (request: Request, env: Env) => {
+	return new Response(`👋 Hi, I'm ${env.DISCORD_APPLICATION_ID}`);
 });
 
 /**
@@ -46,6 +43,7 @@ router.post('/', async (request, env) => {
 		request,
 		env,
 	);
+
 	if (!isValid || !interaction) {
 		return new Response('Bad request signature.', { status: 401 });
 	}
@@ -62,6 +60,10 @@ router.post('/', async (request, env) => {
 		// Most user commands will come as `APPLICATION_COMMAND`.
 		switch (interaction.data.name.toLowerCase()) {
 			case VOUCH_COMMAND.name.toLowerCase(): {
+				// Get the durable object for this user
+
+
+
 				return new JsonResponse({
 					type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
 					data: {
@@ -78,9 +80,12 @@ router.post('/', async (request, env) => {
 	console.error('Unknown Type');
 	return new JsonResponse({ error: 'Unknown Type' }, { status: 400 });
 });
+
 router.all('*', () => new Response('Not Found.', { status: 404 }));
 
-async function verifyDiscordRequest(request: Request, env: Env) {
+async function verifyDiscordRequest(request: Request, env: Env): Promise<
+	{ interaction?: any, isValid: boolean }>
+	{
 	const signature = request.headers.get('x-signature-ed25519');
 	const timestamp = request.headers.get('x-signature-timestamp');
 	const body = await request.text();
@@ -88,8 +93,9 @@ async function verifyDiscordRequest(request: Request, env: Env) {
 		signature &&
 		timestamp &&
 		verifyKey(body, signature, timestamp, env.DISCORD_PUBLIC_KEY);
-	if (!isValidRequest) {
-		return { isValid: false };
+
+	if (!(env.SKIP_DISCORD_VALIDATION == "true") && !isValidRequest) {
+		return {  isValid: false };
 	}
 
 	return { interaction: JSON.parse(body), isValid: true };
