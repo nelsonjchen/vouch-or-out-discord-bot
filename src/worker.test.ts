@@ -4,7 +4,6 @@ import { describe, expect, it, beforeAll, afterAll } from "vitest"
 import {
 	InteractionResponseType,
 	InteractionType,
-	verifyKey,
 } from 'discord-interactions';
 
 describe("Worker", () => {
