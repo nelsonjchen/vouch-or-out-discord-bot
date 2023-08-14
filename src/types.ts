@@ -14,6 +14,7 @@ export interface Env {
 	//
 	DISCORD_APPLICATION_ID: string;
 	//
+	
 	SKIP_DISCORD_VALIDATION: string;
 }
 

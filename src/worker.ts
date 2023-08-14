@@ -38,7 +38,7 @@ router.get('/', (request: Request, env: Env) => {
  * include a JSON payload described here:
  * https://discord.com/developers/docs/interactions/receiving-and-responding#interaction-object
  */
-router.post('/', async (request, env) => {
+router.post('/', async (request: Request, env: Env) => {
 	const { isValid, interaction } = await server.verifyDiscordRequest(
 		request,
 		env,
@@ -60,8 +60,55 @@ router.post('/', async (request, env) => {
 		// Most user commands will come as `APPLICATION_COMMAND`.
 		switch (interaction.data.name.toLowerCase()) {
 			case VOUCH_COMMAND.name.toLowerCase(): {
-				// Get the durable object for this user
+				// Make sure the calling user is already vouched for with a role named "Vouched"
+				const guildId = interaction.guild_id;
+				const userId = interaction.member.user.id;
+				const guildMemberUrl = `https://discord.com/api/v8/guilds/${guildId}/members/${userId}`;
+				const guildMemberResponse = await fetch(guildMemberUrl, {
+					headers: {
+						Authorization: `Bot ${env.DISCORD_TOKEN}`,
+					},
+				});
+				if (!guildMemberResponse.ok) {
+					console.error(
+						`Error getting guild member: ${guildMemberResponse.status} ${guildMemberResponse.statusText}`,
+					);
+				}
 
+				// Check if the user has the "Vouched" role
+				const guildMember = await guildMemberResponse.json();
+				// Find the role that is named "Vouched"
+				const hasVouchedRole = guildMember.roles.find(
+					(role: any) => role.name === 'Vouched',
+				);
+
+
+				// If the user doesn't have the role, return an error
+				if (!hasVouchedRole) {
+					return new JsonResponse({
+						type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+						data: {
+							content: "I'm sorry, you must be vouched for to use this command.",
+							flags: InteractionResponseFlags.EPHEMERAL,
+						},
+					});
+				}
+
+				// Get the user to vouch for
+				const vouchUserId = interaction.data.options[0].value;
+				// Get the reason for the vouch
+				const vouchReason = interaction.data.options[1].value;
+
+				const vouches = env.Vouch.idFromName(vouchUserId)
+				const stub = env.Vouch.get(vouches)
+
+				const vouchResponse = await stub.fetch({
+					method: 'POST',
+					body: JSON.stringify({
+						userId: vouchUserId,
+						reason: vouchReason,
+					}),
+				});
 
 
 				return new JsonResponse({
