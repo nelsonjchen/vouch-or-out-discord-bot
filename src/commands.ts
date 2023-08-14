@@ -2,6 +2,9 @@
  * Share command metadata from a common spot to be used for both runtime
  * and registration.
  */
+import {
+	MessageComponentTypes
+} from 'discord-interactions';
 
 export const VOUCH_COMMAND = {
 	name: 'vouch',
@@ -10,13 +13,13 @@ export const VOUCH_COMMAND = {
 		{
 			name: 'user',
 			description: 'User to vouch for',
-			type: 6,
+			type: MessageComponentTypes.USER_SELECT,
 			required: 'true'
 		},
 		{
 			name: 'reason',
 			description: 'Reason for vouching',
-			type: 3,
+			type: MessageComponentTypes.INPUT_TEXT,
 			required: 'true'
 		}
 	]
