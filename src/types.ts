@@ -1,4 +1,4 @@
-import { MessageComponentTypes } from "discord-interactions";
+import { InteractionType, MessageComponentTypes } from "discord-interactions";
 
 
 export interface Env {
@@ -70,7 +70,7 @@ export interface UserVouch {
 // }
 
 export interface VouchCommandInteraction {
-	type: 2;
+	type: InteractionType.PING | InteractionType.APPLICATION_COMMAND;
 	member: {
 		user: {
 			id: string;

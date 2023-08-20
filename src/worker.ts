@@ -10,7 +10,7 @@ import {
 } from 'discord-interactions';
 import { VOUCH_COMMAND } from './commands.js';
 import { InteractionResponseFlags } from 'discord-interactions';
-import { Env } from './types.js';
+import { Env, VouchCommandInteraction } from './types.js';
 
 class JsonResponse extends Response {
 	constructor(body: object, init?: ResponseInit) {
@@ -39,10 +39,10 @@ router.get('/', (request: Request, env: Env) => {
  * https://discord.com/developers/docs/interactions/receiving-and-responding#interaction-object
  */
 router.post('/', async (request: Request, env: Env) => {
-	const { isValid, interaction } = await server.verifyDiscordRequest(
+	const { isValid, interaction } = (await server.verifyDiscordRequest(
 		request,
 		env,
-	);
+	)) as { isValid: boolean, interaction?: VouchCommandInteraction };
 
 	if (!isValid || !interaction) {
 		return new Response('Bad request signature.', { status: 401 });
