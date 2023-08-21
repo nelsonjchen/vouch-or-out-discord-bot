@@ -7,7 +7,7 @@ export interface Env {
 	//
 	// Example binding to Durable Object. Learn more at https://developers.cloudflare.com/workers/runtime-apis/durable-objects/
 	// MY_DURABLE_OBJECT: DurableObjectNamespace
-	Vouch: DurableObjectNamespace
+	VOUCHES: DurableObjectNamespace
 	//
 	// Example binding to R2. Learn more at https://developers.cloudflare.com/workers/runtime-apis/r2/
 	// MY_BUCKET: R2Bucket
@@ -17,6 +17,7 @@ export interface Env {
 	//
 	DISCORD_APPLICATION_ID: string;
 	//
+	DISCORD_TOKEN: string;
 
 	SKIP_DISCORD_VALIDATION: string;
 }
@@ -79,6 +80,7 @@ export interface VouchCommandInteraction {
 		roles: string[];
 	},
 	id: string;
+	guild_id: string;
 	data: {
 		options: [
 			{

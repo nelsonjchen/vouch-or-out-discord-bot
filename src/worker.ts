@@ -10,7 +10,7 @@ import {
 } from 'discord-interactions';
 import { VOUCH_COMMAND } from './commands.js';
 import { InteractionResponseFlags } from 'discord-interactions';
-import { Env, VouchCommandInteraction } from './types.js';
+import { Env, UserVouch, VouchCommandInteraction } from './types.js';
 
 
 const VOUCHED_ROLE_ID = '1137973458672820224'
@@ -79,14 +79,83 @@ router.post('/', async (request: Request, env: Env) => {
 					});
 				}
 
+				// Retrieve the vouch'd for durableobject
+				const userVouch = {
+					userId: interaction.member.user.id,
+					reason: interaction.data.options[1].value,
+				}
+
+				// Send the vouch to the durable object
+
+				console.log(userVouch)
+				const doId = env.VOUCHES.idFromName(userVouch.userId)
+				console.log(doId)
+				const doStub = env.VOUCHES.get(doId)
+				console.log(doStub)
+
+				const vouches = await doStub.fetch(
+					new Request("/vouches", { method: "POST", body: JSON.stringify(userVouch) })
+				)
+
+
+				console.log(vouches)
+
+				// Check if the vouch was successful
+				if (vouches.status != 200) {
+					return new JsonResponse({
+						type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+						data: {
+							content: "I'm sorry, I couldn't vouch that user. Please try again later.",
+							flags: InteractionResponseFlags.EPHEMERAL,
+						},
+					});
+				}
+
+				// Does the vouch not exceed the limit?
+				const vouchesJson = await vouches.json() as UserVouch[]
+				if (vouchesJson.length < 2) {
+					return new JsonResponse({
+						type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+						data: {
+							content: "You have vouched for that user.",
+							flags: InteractionResponseFlags.EPHEMERAL,
+						},
+					});
+				}
+
+				// If the vouch is beyond the limit, add the role
+				// Adding vouch role to target user
+				// Post to Discord API
+				const discordResponse = await fetch(
+					`https://discord.com/api/v8/guilds/${interaction.guild_id}/members/${userVouch.userId}/roles/${VOUCHED_ROLE_ID}`,
+					{
+						method: 'PUT',
+						headers: {
+							Authorization: `Bot ${env.DISCORD_TOKEN}`,
+						},
+					},
+				);
+
+				// Check if the role was added successfully
+				if (discordResponse.status != 204) {
+					return new JsonResponse({
+						type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+						data: {
+							content: "I'm sorry, I couldn't vouch that user for you. Please try again later.",
+							flags: InteractionResponseFlags.EPHEMERAL,
+						},
+					});
+				}
+
+				// If the role was added successfully, return a success message
 
 				return new JsonResponse({
 					type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
 					data: {
-						content: "I'm sorry, I'm not ready yet. Please try again later.",
+						content: "User has been added to the vouched role.",
 					},
 				});
-				}
+			}
 
 			default:
 				return new JsonResponse({ error: 'Unknown Type' }, { status: 400 });
