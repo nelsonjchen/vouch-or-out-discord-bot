@@ -11,7 +11,7 @@ import {
 import { VOUCH_COMMAND } from './commands.js';
 import { InteractionResponseFlags } from 'discord-interactions';
 import { Env, UserVouch, VouchCommandInteraction } from './types.js';
-
+export { Vouches } from './durable.js';
 
 const VOUCHED_ROLE_ID = '1137973458672820224'
 
