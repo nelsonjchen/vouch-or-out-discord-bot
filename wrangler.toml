@@ -48,4 +48,4 @@ class_name = "Vouches"
 # Docs: https://developers.cloudflare.com/workers/learning/using-durable-objects#configure-durable-object-classes-with-migrations
 [[migrations]]
 tag = "v1"
-new_classes = ["Vouches"]
+new_classes = ["Vouches", "TestDo"]

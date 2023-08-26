@@ -33,5 +33,6 @@ export class Vouches {
 			// Return the list of vouches
 			return new Response(JSON.stringify(newVouches), { status: 200 })
 		}
+		return new Response("Method not allowed", { status: 405 })
 	}
 }

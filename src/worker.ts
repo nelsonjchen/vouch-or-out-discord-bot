@@ -91,9 +91,8 @@ router.post('/', async (request: Request, env: Env) => {
 				const doStub = env.VOUCHES.get(doId)
 
 				const vouches = await doStub.fetch(
-					new Request("/vouches", { method: "POST", body: JSON.stringify(userVouch) })
+					new Request("http://dummy", { method: "POST", body: JSON.stringify(userVouch) })
 				)
-
 
 				console.log(vouches)
 
@@ -185,14 +184,6 @@ async function verifyDiscordRequest(request: Request, env: Env): Promise<
 const server = {
 	verifyDiscordRequest: verifyDiscordRequest,
 	fetch: async function (request: Request, env: Env, ctx: ExecutionContext) {
-		console.log(env.VOUCHES)
-		const randId = env.VOUCHES.newUniqueId()
-		console.log(randId)
-		const id = env.VOUCHES.idFromName("fuck")
-		console.log(id)
-		const dos = env.VOUCHES.get(id)
-		console.log(dos)
-
 		return router.handle(request, env);
 	},
 };

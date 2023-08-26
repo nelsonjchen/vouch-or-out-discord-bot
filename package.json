@@ -4,10 +4,10 @@
   "type": "module",
   "private": true,
   "scripts": {
-		"deps-update": "npx npm-check-updates -u",
+    "deps-update": "npx npm-check-updates -u",
     "deploy": "wrangler deploy",
     "register": "ts-node --esm ./src/register.ts",
-		"test": "vitest",
+    "test": "vitest",
     "start": "wrangler dev"
   },
   "devDependencies": {
