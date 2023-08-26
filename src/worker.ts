@@ -78,6 +78,16 @@ router.post('/', async (request: Request, env: Env) => {
 						},
 					});
 				}
+				// You can't vouch for yourself
+				if (interaction.member.user.id === interaction.data.options[0].value) {
+					return new JsonResponse({
+						type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+						data: {
+							content: "I'm sorry, you can't vouch for yourself.",
+							flags: InteractionResponseFlags.EPHEMERAL,
+						},
+					});
+				}
 
 				// Retrieve the vouch'd for durableobject
 				const userVouch = {
