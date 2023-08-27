@@ -10,7 +10,7 @@ import {
 } from 'discord-interactions';
 import { VOUCH_COMMAND } from './commands.js';
 import { InteractionResponseFlags } from 'discord-interactions';
-import { Env, UserVouch, VouchCommandInteraction } from './types.js';
+import { Env, UserVouch, VouchCommandInteraction, VouchesDto } from './types.js';
 export { Vouches } from './durable.js';
 
 const VOUCHED_ROLE_ID = '1137973458672820224'
@@ -89,9 +89,11 @@ router.post('/', async (request: Request, env: Env) => {
 					});
 				}
 
+				const userVoucher = interaction.member.user.id
+
 				// Retrieve the vouch'd for durableobject
 				const userVouch = {
-					userId: interaction.member.user.id,
+					userId: interaction.data.options[0].value,
 					reason: interaction.data.options[1].value,
 				}
 
@@ -100,31 +102,35 @@ router.post('/', async (request: Request, env: Env) => {
 				const doId = env.VOUCHES.idFromName(userVouch.userId)
 				const doStub = env.VOUCHES.get(doId)
 
-				const vouches = await doStub.fetch(
-					new Request("http://dummy", { method: "POST", body: JSON.stringify(userVouch) })
+				const doResp = await doStub.fetch(
+					new Request("http://dummy", {
+						method: "POST", body: JSON.stringify(
+							userVouch
+						)
+					})
 				)
 
-				console.log(vouches)
+				// Try to parse the response as JSON
+				const vouchesResp = await doResp.json() as VouchesDto
 
 				// Check if the vouch was successful
-				if (vouches.status != 200) {
+				if (vouchesResp.error) {
 					return new JsonResponse({
 						type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
 						data: {
-							content: "I'm sorry, I couldn't vouch that user. Please try again later.",
+							content: `I'm sorry, I couldn't vouch that user for you. Please try again later.`,
 							flags: InteractionResponseFlags.EPHEMERAL,
 						},
 					});
 				}
 
-				// Does the vouch not exceed the limit?
-				const vouchesJson = await vouches.json() as UserVouch[]
-				if (vouchesJson.length < 2) {
+
+				if (vouchesResp.vouches.length < 2) {
 					return new JsonResponse({
 						type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
 						data: {
-							content: "You have vouched for that user.",
-							flags: InteractionResponseFlags.EPHEMERAL,
+							// Username has vouch
+							content: `<@${userVouch.userId}> has been vouched for by <@${userVoucher}>. They need one more vouch to be added to the vouched role.`,
 						},
 					});
 				}
@@ -158,7 +164,7 @@ router.post('/', async (request: Request, env: Env) => {
 				return new JsonResponse({
 					type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
 					data: {
-						content: "User has been added to the vouched role.",
+						content: `<@${userVouch.userId}> has been vouched for by <@${userVoucher}>. They have been added to the vouched role.`,
 					},
 				});
 			}

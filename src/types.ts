@@ -28,6 +28,11 @@ export interface UserVouch {
 	reason: string
 }
 
+export interface VouchesDto {
+	vouches: UserVouch[]
+	error?: string
+	message?: string
+}
 
 // Example incoming interaction type
 // E.g.
