@@ -93,13 +93,14 @@ router.post('/', async (request: Request, env: Env) => {
 
 				// Retrieve the vouch'd for durableobject
 				const userVouch = {
-					userId: interaction.data.options[0].value,
+					// The user who is vouching
+					userId: interaction.member.user.id,
 					reason: interaction.data.options[1].value,
 				}
 
 				// Send the vouch to the durable object
-
-				const doId = env.VOUCHES.idFromName(userVouch.userId)
+				// Get the durable object id from the username of the user being vouched for
+				const doId = env.VOUCHES.idFromName(interaction.data.options[0].value)
 				const doStub = env.VOUCHES.get(doId)
 
 				const doResp = await doStub.fetch(
@@ -113,12 +114,13 @@ router.post('/', async (request: Request, env: Env) => {
 				// Try to parse the response as JSON
 				const vouchesResp = await doResp.json() as VouchesDto
 
+
 				// Check if the vouch was successful
-				if (vouchesResp.error) {
+				if (vouchesResp.error && vouchesResp.vouches.length < 2) {
 					return new JsonResponse({
 						type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
 						data: {
-							content: `I'm sorry, I couldn't vouch that user for you. Please try again later.`,
+							content: `I'm sorry, I couldn't vouch that user for you. Reason: ${vouchesResp.error}`,
 							flags: InteractionResponseFlags.EPHEMERAL,
 						},
 					});
@@ -148,12 +150,13 @@ router.post('/', async (request: Request, env: Env) => {
 					},
 				);
 
+
 				// Check if the role was added successfully
 				if (discordResponse.status != 204) {
 					return new JsonResponse({
 						type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
 						data: {
-							content: "I'm sorry, I couldn't vouch that user for you. Please try again later.",
+							content: await discordResponse.text(),
 							flags: InteractionResponseFlags.EPHEMERAL,
 						},
 					});
