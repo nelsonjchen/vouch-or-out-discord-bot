@@ -133,7 +133,7 @@ router.post('/', async (request: Request, env: Env) => {
 						type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
 						data: {
 							// Username has vouch
-							content: `<@${userVouch.userId}> has been vouched for by <@${userVoucher}>. They need one more vouch to be added to the vouched role.`,
+							content: `<@${userVouchedFor}> has been \`/vouch\`'ed for by <@${userVoucher}>. Reason was: ${userVouch.reason}. They need one more vouch to be added to the vouched role.`,
 						},
 					});
 				}
@@ -154,11 +154,12 @@ router.post('/', async (request: Request, env: Env) => {
 
 				// Check if the role was added successfully
 				if (discordResponse.status != 204) {
+					console.error(`Discord API returned ${discordResponse.status}\n${await discordResponse.text()}.`);
+
 					return new JsonResponse({
 						type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
 						data: {
-							content: `Unable to add role to user. Discord API returned ${discordResponse.status}`,
-							flags: InteractionResponseFlags.EPHEMERAL,
+							content: `Error: Unable to add role to user <@${userVouchedFor}> for <@${userVoucher}>. Discord API returned ${discordResponse.status}`,
 						},
 					});
 				}
@@ -168,7 +169,7 @@ router.post('/', async (request: Request, env: Env) => {
 				return new JsonResponse({
 					type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
 					data: {
-						content: `<@${userVouchedFor}> has been vouched for by <@${userVoucher}>. They have been added to the vouched role.`,
+						content: `<@${userVouchedFor}> has been \`/vouch\`'ed for by <@${userVoucher}>. Reason was: ${userVouch.reason}. They have been added to the vouched role if they haven't already.`,
 					},
 				});
 			}
