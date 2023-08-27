@@ -193,11 +193,19 @@ router.post('/', async (request: Request, env: Env) => {
 				}
 
 				// If the role was added successfully, return a success message
+				// Make a summary message of the vouches and the reasons
+
+				const vouchSummary =
+					vouchesResp.vouches.map((vouch) => {
+						return `<@${vouch.userId}>: ${vouch.reason}`;
+					}).join('\n');
 
 				return new JsonResponse({
 					type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
 					data: {
-						content: `<@${userVouchedFor}> has been \`/vouch\`'ed for by <@${userVoucher}>. Reason was: ${userVouch.reason}. They have been added to the vouched role if they haven't already.`,
+						content: `<@${userVouchedFor}> has been \`/vouch\`'ed successfully.\n
+${vouchSummary}\n
+They have been added to the Vouched role if they haven't already.`,
 					},
 				});
 			}

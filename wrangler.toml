@@ -5,8 +5,9 @@ compatibility_date = "2023-08-07"
 # Variable bindings. These are arbitrary, plaintext strings (similar to environment variables)
 # Note: Use secrets to store sensitive data.
 # Docs: https://developers.cloudflare.com/workers/platform/environment-variables
-# [vars]
-# MY_VARIABLE = "production_value"
+[vars]
+DISCORD_APPLICATION_ID = "1135397438207828070"
+DISCORD_PUBLIC_KEY = "8a03fc11f53b736b6e356b93c3a789dad6c137afe8bbf3215562c79d33f89f2b"
 
 # Bind a KV Namespace. Use KV as persistent storage for small key-value pairs.
 # Docs: https://developers.cloudflare.com/workers/runtime-apis/kv
