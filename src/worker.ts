@@ -161,7 +161,7 @@ router.post('/', async (request: Request, env: Env) => {
 						type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
 						data: {
 							// Username has vouch
-							content: `<@${userVouchedFor}> has been \`/vouch\`'ed for by <@${userVoucher}>. Reason was: ${userVouch.reason}. They need one more vouch to be added to the vouched role.`,
+							content: `<@${userVouchedFor}> has been \`/vouch\`'ed for by <@${userVoucher}>. Reason was: ${userVouch.reason}. They need one more \`/vouch\` from a Vouched user to be added to the Vouched role.`,
 						},
 					});
 				}
