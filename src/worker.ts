@@ -10,7 +10,7 @@ import {
 } from 'discord-interactions';
 import { VOUCH_COMMAND } from './commands.js';
 import { InteractionResponseFlags } from 'discord-interactions';
-import { Env, UserVouch, VouchCommandInteraction, VouchesDto } from './types.js';
+import { Env, UserVouch, VouchCommandInteraction, VouchesDto, DiscordMember } from './types.js';
 export { Vouches } from './durable.js';
 
 const VOUCHED_ROLE_ID = '1137973458672820224'
@@ -84,6 +84,34 @@ router.post('/', async (request: Request, env: Env) => {
 						type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
 						data: {
 							content: "I'm sorry, you can't vouch for yourself.",
+							flags: InteractionResponseFlags.EPHEMERAL,
+						},
+					});
+				}
+				// Check if the target user already has the vouched role
+				const targetUser = await fetch(
+					`https://discord.com/api/v10/guilds/${interaction.guild_id}/members/${interaction.data.options[0].value}`,
+					{
+						method: 'GET',
+						headers: {
+							Authorization: `Bot ${env.DISCORD_TOKEN}`,
+						},
+					},
+				);
+
+				// Check if the user is in the vouched role
+				const targetUserJson = await targetUser.json() as DiscordMember;
+				const targetUserRoles = targetUserJson.roles;
+				const alreadyVouched = targetUserRoles.find(
+					(role) => role === VOUCHED_ROLE_ID,
+				);
+
+				// If the user is already vouched, return an error
+				if (alreadyVouched) {
+					return new JsonResponse({
+						type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+						data: {
+							content: "I'm sorry, that user is already vouched for.",
 							flags: InteractionResponseFlags.EPHEMERAL,
 						},
 					});

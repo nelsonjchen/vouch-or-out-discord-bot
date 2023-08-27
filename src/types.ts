@@ -22,6 +22,9 @@ export interface Env {
 	SKIP_DISCORD_VALIDATION: string;
 }
 
+export interface DiscordMember {
+	roles: string[]
+}
 
 export interface UserVouch {
 	userId: string
