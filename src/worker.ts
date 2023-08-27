@@ -90,6 +90,7 @@ router.post('/', async (request: Request, env: Env) => {
 				}
 
 				const userVoucher = interaction.member.user.id
+				const userVouchedFor = interaction.data.options[0].value
 
 				// Retrieve the vouch'd for durableobject
 				const userVouch = {
@@ -100,7 +101,7 @@ router.post('/', async (request: Request, env: Env) => {
 
 				// Send the vouch to the durable object
 				// Get the durable object id from the username of the user being vouched for
-				const doId = env.VOUCHES.idFromName(interaction.data.options[0].value)
+				const doId = env.VOUCHES.idFromName(userVouchedFor)
 				const doStub = env.VOUCHES.get(doId)
 
 				const doResp = await doStub.fetch(
@@ -141,7 +142,7 @@ router.post('/', async (request: Request, env: Env) => {
 				// Adding vouch role to target user
 				// Post to Discord API
 				const discordResponse = await fetch(
-					`https://discord.com/api/v8/guilds/${interaction.guild_id}/members/${userVouch.userId}/roles/${VOUCHED_ROLE_ID}`,
+					`https://discord.com/api/v10/guilds/${interaction.guild_id}/members/${userVouchedFor}/roles/${VOUCHED_ROLE_ID}`,
 					{
 						method: 'PUT',
 						headers: {
@@ -156,7 +157,7 @@ router.post('/', async (request: Request, env: Env) => {
 					return new JsonResponse({
 						type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
 						data: {
-							content: await discordResponse.text(),
+							content: `Unable to add role to user. Discord API returned ${discordResponse.status}`,
 							flags: InteractionResponseFlags.EPHEMERAL,
 						},
 					});
@@ -167,7 +168,7 @@ router.post('/', async (request: Request, env: Env) => {
 				return new JsonResponse({
 					type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
 					data: {
-						content: `<@${userVouch.userId}> has been vouched for by <@${userVoucher}>. They have been added to the vouched role.`,
+						content: `<@${userVouchedFor}> has been vouched for by <@${userVoucher}>. They have been added to the vouched role.`,
 					},
 				});
 			}
